@@ -4,10 +4,10 @@ import requests, json
 import time
 from config import *
 
-BASE_URL = ENDPOINT
+BASE_URL = ALP_ENDPOINT
 ACCOUNT_URL = '{}/v2/account'.format(BASE_URL)
 ORDERS_URL = '{}/v2/orders'.format(BASE_URL)
-HEADERS = {'APCA-API-KEY-ID': API_KEY, 'APCA-API-SECRET-KEY': SECRET_KEY}
+HEADERS = {'APCA-API-KEY-ID': ALP_API_KEY, 'APCA-API-SECRET-KEY': ALP_SECRET_KEY    }
 
 
 def get_account():
