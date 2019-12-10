@@ -12,35 +12,11 @@ from iexfinance.stocks import get_earnings_today
 from iexfinance.stocks import get_historical_data
 from config import *
 
-# got tired of writing out the entire statement
-Token = token = IEX_API_KEY
-
 # setting iex api version to test [sandbox] - use sandbox api keys
 os.environ['IEX_API_VERSION'] = 'iexcloud-sandbox'
 os.environ['IEX_TOKEN'] = IEX_API_KEY
 
+amzn = Stock('AMZN')
+amzn_balance = amzn.get_balance_sheet()
 
-'''NOTE: i don't think i need the two parts in the function
-
-def getCompanyHistory():
-    amzn_hist = amazon.get_historical_data('AMZN', Token)
-    return(amzn_hist)
-    
-that should be plenty
-
-'''
-
-
-# attempting to get previous data
-def getCompanyHistory():
-    amazon = Stock('AMZN', Token)
-    amzn_hist = amazon.get_historical_data('AMZN', Token)
-    return(amzn_hist)
-
-# attempting to retrieve (CURRENT?) stock info and format it to a pandas dataframe
-def getCompanyInfo():
-    amzn = Stock('AMZN', Token)
-    amzn_info = amzn.get_company()
-    return(amzn_info)
-
-amzn_info_to_df = []
+print(amzn_balance)
