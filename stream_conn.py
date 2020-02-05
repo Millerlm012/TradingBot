@@ -1,18 +1,26 @@
-import alpaca_trade_api as tradeapi
 from alpaca_trade_api.stream2 import StreamConn
 from config import *
 from timeloop import Timeloop
-import time
-import os
+from datetime import datetime
+import pytz
 from pprint import pprint
 
 conn = StreamConn(ALP_KEY, ALP_SECRET_KEY)
+tz_ny = pytz.timezone('America/New_York')
 
-# need to set up alpaca_api_key as enviromental variable OR make the key be an argument for StreamConn?
-@conn.on(r'.*')
+stock_data = []
+choice_of_stock = 'AAPL'
+
+tl = Timeloop()
+
+
+# StreamConn being used to collect data
+@conn.on(r'^AM$')
 async def on_data(conn, channel, data):
+    timenow = datetime.now(tz_ny)
     print(channel)
-    pprint(data)
+    pprint(str(timenow) + ' ' + str(data))
+    stock_data.append(data)
 
-# A.'symbol' --> specifies what stock you want to monitor --> currently I don't know what it's working for time and such
-conn.run(['trade_updates', 'A.FCEL'])
+
+conn.run(['trade_updates', 'AM.' + choice_of_stock])
