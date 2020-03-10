@@ -13,30 +13,21 @@ import pandas as pd
 '''
 NOTES:
 - reorganize code / clean
-- *!! Rewrite the print() statements in the functions so they are easier to read for the naked eye
-- *!! Check the logic of the program
+- Figure out how to properly call the dictionary of dictionaries and properly add to them and stuff
 - You will be getting the price each minute throughout the day and the highs and lows.... Technically you should be able to graph that at the end of the day
-
 --------------------------------------------------------------------------------------------------------------------------------
 Dictionary Diagram:
-
 {'min_x': {'high': '', 'low': '', 'dif.': '', 'price': '', 'percent': '', 'avg.': '', 'percent_price': '', 'stop_loss': '', 'entry_price': ''}
-
-
 --------------------------------------------------------------------------------------------------------------------------------
 DATAFRAME DIAGRAM:
-
-        [0]     [1]     [2]     [3]     [4]       [5]        [6]                [7]         [8]           ----->   elements from list
+        [0]     [1]     [2]     [3]     [4]       [5]        [6]                [7]         [8]           ----->   elements from dictionary
         high    low     dif.    price   percent   avg.       percent_price     stop_loss   entry_price
 0       NaN     NaN     NaN     NaN     NaN       NaN        NaN               NaN         NaN
 1       ' ---------------------------------------- Values --------------------------------------------- '
 ...     ' ---------------------------------------- Values --------------------------------------------- '
 360     ' ---------------------------------------- Values --------------------------------------------- '
-
 --------------------------------------------------------------------------------------------------------------------------------
 BUGS:
-
-
 '''
 
 # dictionary of dictionaries used for storing data
@@ -106,7 +97,7 @@ def minute_6_calculations():
     all_stock_data['min_' + str(minute_ticker)]['avg.'] = all_stock_data['min_' + str(minute_ticker - 1)]['avg.']
 
     if all_stock_data['min_' + str(minute_ticker)]['dif.'] >= all_stock_data['min_' + str(minute_ticker - 1)]['avg.'] * 2:
-        print('minute_6_dif >= minute_5_average_doubled --> carrying out calculations for bar 1')
+        print('minute_6_dif >= minute_5_average_doubled')
         stage += 1
 
         # storing the percent and percent_price
@@ -165,31 +156,36 @@ def minute_8_buy_stock():
     all_stock_data['min_' + str(minute_ticker)]['entry_price'] = entry_price
     # main algorithm --> need to fix apparently
     dif_entry_price_stop_loss = int(entry_price) - int(stop_loss)
+    target_change = dif_entry_price_stop_loss * 2
+    target_price = int(entry_price) + int(target_change)
     equity = account_info.equity
     risk = int(equity) * .01
     shares_decimal = risk / dif_entry_price_stop_loss * .25
     shares = round(shares_decimal)
-    net_profit = dif_entry_price_stop_loss * 2
-    target = int(entry_price) + int(net_profit)
 
-    api_paper.submit_order(
-        # submit the order as a limit (buys stock once it reaches "correct" price) -> uses bracket to decide when to sell stock (either at limit or stop loss)
-        symbol=choice_of_stock,
-        qty=shares,
-        side='buy',
-        type='limit',
-        time_in_force='day',
-        order_class='bracket',
-        take_profit=dict(
+    if equity >= 27000:
+
+        api_paper.submit_order(
+            # submit the order as a limit (buys stock once it reaches "correct" price) -> uses bracket to decide when to sell stock (either at limit or stop loss)
+            symbol=choice_of_stock,
+            qty=shares,
+            side='buy',
+            type='limit',
+            time_in_force='day',
             limit_price=entry_price,
-        ),
-        stop_loss=dict(
-            stop_price=stop_loss,
-            limit_price=target,
+            order_class='bracket',
+            take_profit=dict(
+                limit_price=target_price,
+            ),
+            stop_loss=dict(
+                stop_price=stop_loss,
+            )
         )
-    )
 
-    reset_stage()
+        reset_stage()
+
+    else:
+        reset_stage()
 
 
 def decide_three_bar():
