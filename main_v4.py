@@ -15,6 +15,7 @@ NOTES:
 - reorganize code / clean
 - Figure out how to properly call the dictionary of dictionaries and properly add to them and stuff
 - You will be getting the price each minute throughout the day and the highs and lows.... Technically you should be able to graph that at the end of the day
+- If response_ticker < 6 do the prints.... otherwise you'd think printing them off later under minute_x function wil work better
 --------------------------------------------------------------------------------------------------------------------------------
 Dictionary Diagram:
 {'min_x': {'high': '', 'low': '', 'dif.': '', 'price': '', 'percent': '', 'avg.': '', 'percent_price': '', 'stop_loss': '', 'entry_price': ''}
@@ -48,7 +49,7 @@ stock_data_keys = {
 # making all of the keys for the all_stock_data dictionary
 y = 1
 for i in range(361):
-    all_stock_data['min_' + str(y)] = stock_data_keys
+    all_stock_data['min_' + str(y)] = {'high': '', 'low': '', 'dif.': '', 'price': '', 'percent': '', 'avg.': '', 'percent_price': '', 'stop_loss': '', 'entry_price':  ''}
     y += 1
 
 # go_time = 9:30am in seconds | tz_ny = setting the timezone to New York | choice_of_stock = 'choice of stock'
@@ -85,19 +86,21 @@ def last_5_minute_average():
     # had to multiply by .2 --> equal to dividing by 5
     sum_of_5 = all_stock_data['min_' + str(minute_ticker - 5)]['dif.'] + all_stock_data['min_' + str(minute_ticker - 4)]['dif.'] + all_stock_data['min_' + str(minute_ticker - 3)]['dif.'] + all_stock_data['min_' + str(minute_ticker - 2)]['dif.'] + all_stock_data['min_' + str(minute_ticker - 1)]['dif.']
     average = int(sum_of_5) / 5
-    all_stock_data['min_' + str(minute_ticker)]['avg.'] = str(average)
-    stage += 1
+    average_rounded = round(average, 2)
+    all_stock_data['min_' + str(minute_ticker)]['avg.'] = average_rounded
 
 
 # stock_data[[minute_ticker - 1][3]] * 2 --> retrieves minute 5 avg. and doubles it
 def minute_6_calculations():
     global stage
 
-    # setting the data that doesn't change to be carried over into the next minute
-    all_stock_data['min_' + str(minute_ticker)]['avg.'] = all_stock_data['min_' + str(minute_ticker - 1)]['avg.']
+    # last_5_minute_average being calculated during the 6th minute
+    last_5_minute_average()
 
-    if all_stock_data['min_' + str(minute_ticker)]['dif.'] >= all_stock_data['min_' + str(minute_ticker - 1)]['avg.'] * 2:
-        print('minute_6_dif >= minute_5_average_doubled')
+    print('min_' + str(minute_ticker) + ' data --- ' + str(all_stock_data['min_' + str(minute_ticker)]))
+
+    if int(all_stock_data['min_' + str(minute_ticker)]['dif.']) >= int(all_stock_data['min_' + str(minute_ticker)]['avg.'] * 2):
+        print('minute_6_dif >= minute_5_average_doubled --> moving to minute_7_calculations')
         stage += 1
 
         # storing the percent and percent_price
@@ -106,9 +109,8 @@ def minute_6_calculations():
         # to calculate the percent_price are you using the percent of minute_6 and adding it to the dif. of minute_6
         all_stock_data['min_' + str(minute_ticker)]['percent_price'] = all_stock_data['min_' + str(minute_ticker)]['low'] + all_stock_data['min_' + str(minute_ticker)]['percent']
     else:
-        # ! rewrite the reset function !
-        reset_stage()
         print('minute_6_dif !>= minute_5_average_doubled --> reset_stage()')
+        reset_stage()
 
 
 def minute_7_calculations():
@@ -131,11 +133,13 @@ def minute_7_calculations():
             decide_three_bar()
 
         else:
-            reset_stage()
             print('minute_6_high + .05 !>= minute_7_high !>= minute_6_high - .05 --> reset stage')
+            reset_stage()
+
     else:
-        reset_stage()
         print('minute_7_low !>= minute_6_50_percent_price --> reset stage')
+        reset_stage()
+
 
 
 def minute_8_buy_stock():
@@ -159,46 +163,52 @@ def minute_8_buy_stock():
     target_change = dif_entry_price_stop_loss * 2
     target_price = int(entry_price) + int(target_change)
     equity = account_info.equity
+    buying_power = account_info.buying_power
     risk = int(equity) * .01
-    shares_decimal = risk / dif_entry_price_stop_loss * .25
-    shares = round(shares_decimal)
 
     if equity >= 27000:
 
-        api_paper.submit_order(
-            # submit the order as a limit (buys stock once it reaches "correct" price) -> uses bracket to decide when to sell stock (either at limit or stop loss)
-            symbol=choice_of_stock,
-            qty=shares,
-            side='buy',
-            type='limit',
-            time_in_force='day',
-            limit_price=entry_price,
-            order_class='bracket',
-            take_profit=dict(
-                limit_price=target_price,
-            ),
-            stop_loss=dict(
-                stop_price=stop_loss,
+        # calculating number of shares to buy
+        total_shares = buying_power / entry_price
+        theoretical_money_lost = (buying_power / entry_price) * dif_entry_price_stop_loss
+
+        if theoretical_money_lost > risk:
+            money_over = theoretical_money_lost - risk
+            number_of_shares_over = money_over / dif_entry_price_stop_loss
+            shares_to_buy = total_shares - number_of_shares_over
+            shares = shares_to_buy
+
+            api_paper.submit_order(
+                # submit the order as a limit (buys stock once it reaches "correct" price) -> uses bracket to decide when to sell stock (either at limit or stop loss)
+                symbol=choice_of_stock,
+                qty=shares,
+                side='buy',
+                type='limit',
+                time_in_force='day',
+                limit_price=entry_price,
+                order_class='bracket',
+                take_profit=dict(
+                    limit_price=target_price,
+                ),
+                stop_loss=dict(
+                    stop_price=stop_loss,
+                )
             )
-        )
 
-        reset_stage()
-
+        else:
+            reset_stage()
     else:
         reset_stage()
 
 
 def decide_three_bar():
     if stage == 1:
-        last_5_minute_average()
-
-    elif stage == 2:
         minute_6_calculations()
 
-    elif stage == 3:
+    elif stage == 2:
         minute_7_calculations()
 
-    elif stage == 4:
+    elif stage == 3:
         minute_8_buy_stock()
 
 
@@ -230,15 +240,24 @@ async def on_data(conn, channel, data):
         last_trade = api.polygon.last_trade(choice_of_stock)
         last_trade_price = round(last_trade.price, 2)
         # storing data in dictionary of dictionaries
-        all_stock_data['min_' + str(minute_ticker)]['high'] = data.high
-        all_stock_data['min_' + str(minute_ticker)]['low'] = data.low
-        all_stock_data['min_' + str(minute_ticker)]['dif.'] = data.high - data.low
+        all_stock_data['min_' + str(minute_ticker)]['high'] = round(data.high, 2)
+        all_stock_data['min_' + str(minute_ticker)]['low'] = round(data.low, 2)
+        # rounding the difference to the nearest cent
+        dif_high_and_low = data.high - data.low
+        round_dif_high_and_low = round(dif_high_and_low, 2)
+        all_stock_data['min_' + str(minute_ticker)]['dif.'] = round_dif_high_and_low
         all_stock_data['min_' + str(minute_ticker)]['price'] = last_trade_price
 
-        if response_ticker == 5:
+        print('min_' + str(minute_ticker) + ' all_stock_data --- ' + str(all_stock_data))
+        print('min_' + str(minute_ticker) + ' data --- ' + str(all_stock_data['min_' + str(minute_ticker)]))
+
+        if response_ticker == 6:
+            print('response_ticker = ' + str(response_ticker))
             stage += 1
+            print('stage = ' + str(stage))
 
         # deciding which stage of the play the program is on and running the appropriate function
+        print('on stage ' + str(stage))
         decide_three_bar()
 
     else:
