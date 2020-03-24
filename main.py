@@ -14,9 +14,7 @@ import pandas as pd
 NOTES:
 - look at last 5 minute average - does it work?
 - look at minute_7 - can we delete prints?
-- 
 - average doubled is broke
-
 - reorganize code / clean
 - Figure out how to properly call the dictionary of dictionaries and properly add to them and stuff
 - You will be getting the price each minute throughout the day and the highs and lows.... Technically you should be able to graph that at the end of the day
@@ -164,23 +162,38 @@ def minute_8_buy_stock():
     account_info = api_paper.get_account()
     # setting stop_loss at the low of bar 7 and appending it to all_stock_data['min_8']['stop_loss']
     stop_loss = all_stock_data['min_' + str(minute_ticker - 1)]['low']
-    all_stock_data['min_' + str(minute_ticker)]['stop_loss'] = stop_loss
+    all_stock_data['min_' + str(minute_ticker - 1)]['stop_loss'] = stop_loss
     # setting entry_price at the high of bar 7 and appending it to all_stock_data['min_8']['entry_price']
     entry_price = all_stock_data['min_' + str(minute_ticker - 1)]['high']
-    all_stock_data['min_' + str(minute_ticker)]['entry_price'] = entry_price
+    all_stock_data['min_' + str(minute_ticker - 1)]['entry_price'] = entry_price
     # main algorithm --> need to fix apparently
     dif_entry_price_stop_loss = int(entry_price) - int(stop_loss)
     target_change = dif_entry_price_stop_loss * 2
     target_price = int(entry_price) + int(target_change)
     equity = account_info.equity
     buying_power = account_info.buying_power
-    risk = int(equity) * .01
+    risk = int(float(equity)) * .01
 
-    if int(equity) >= 27000:
+    if len(api_paper.list_positions()) == 0:
 
         # calculating number of shares to buy
         total_shares = int(buying_power) / int(entry_price)
-        theoretical_money_lost = (int(buying_power) / int(entry_price)) * int(dif_entry_price_stop_loss)
+
+        print('buying power = ' + str(buying_power))
+        print('entry price = ' + str(entry_price))
+        print('stop loss = ' + str(stop_loss))
+        print('dif_entry_price_stop_loss = ' + str(dif_entry_price_stop_loss))
+
+        buying_over_entry = int(buying_power) / int(entry_price)
+        buying_over_entry_rounded = round(buying_over_entry, 2)
+
+        print('buying over entry = ' + str(buying_over_entry))
+        print('buying over entry rounded = ' + str(buying_over_entry_rounded))
+
+        theoretical_money_lost = int(buying_over_entry_rounded) * int(dif_entry_price_stop_loss)
+
+        print('risk = ' + str(risk))
+        print('theoretical money lost = ' + str(theoretical_money_lost))
 
         if theoretical_money_lost > risk:
             money_over = theoretical_money_lost - risk
@@ -210,10 +223,10 @@ def minute_8_buy_stock():
             print('submitted order successfully')
 
         else:
-            print('minute 8 failed')
+            print('minute 8 failed second if statement')
             reset_stage()
     else:
-        print('minute 8 failed')
+        print('minute 8 failed first if statement')
         reset_stage()
 
 
