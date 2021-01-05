@@ -12,11 +12,8 @@ import pandas as pd
 
 '''
 NOTES:
-- average doubled is broke (should be fixed... just double check)
-- dif of entry and stop loss is broken
 - reorganize code / clean
-- You will be getting the price each minute throughout the day and the highs and lows.... Technically you should be able to graph that at the end of the day
-- If response_ticker < 6 do the prints.... otherwise you'd think printing them off later under minute_x function wil work better
+- Create graph of data
 --------------------------------------------------------------------------------------------------------------------------------
 Dictionary Diagram:
 {'min_x': {'high': '', 'low': '', 'dif.': '', 'price': '', 'percent': '', 'avg.': '', 'percent_price': '', 'stop_loss': '', 'entry_price': ''}
@@ -263,7 +260,7 @@ def reset_stage():
     stage = 1
 
 
-# StreamConn being used to collect data on per minute basis --> defined using the channel argument --> runs until an error occurs... how to kill it
+# StreamConn being used to collect data on per minute basis --> defined using the channel argument --> runs until an error occurs...
 @conn.on(r'^AM$')
 async def on_data(conn, channel, data):
     global stage
@@ -312,7 +309,7 @@ async def on_data(conn, channel, data):
         # edit directory depending on which computer you are running the program on
         df_all_stock_data.to_csv(r'C:\Users\mille\PycharmProjects\Trading\Paper\all_stock_data_dataframe.csv')
         df_stock_data_lst.to_csv(r'C:\Users\mille\PycharmProjects\Trading\Paper\all_stock_data_lst.csv')
-        # I think sys.exit is killing the program
+        # sys.exit is killing the program
         sys.exit('ending program --> market closes in 30 minutes')
 
 
