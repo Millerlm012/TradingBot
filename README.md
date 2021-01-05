@@ -6,4 +6,4 @@ We were able to test all trades on Alpaca with a paper trading account. The prog
 
 I believe main_v5.py is the most up to date code that I created.
 
-NOTE: All config files that use keys are deprecated for any goons attempting to access the accounts lol.
+NOTE: For any goons attempting to access the accounts - all config files that use different API keys are deprecated lol.
